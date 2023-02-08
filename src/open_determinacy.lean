@@ -43,7 +43,15 @@ instance non_winning : quasi_strategy G :=
       change ∀ a, ¬¬ winning_position G X (t.concat a) (¬ p) at h,
       conv at h in (¬¬ winning_position G X (t.concat _) (¬ p))
         { rw not_not, rw winning_position, },
+      -- have g' : Π (a : α), (σ : quasi_strategy G) ∧ 
       have g : α → quasi_strategy G := sorry,
+      -- begin
+      --   intros a,
+      --   specialize h a,
+      --   apply classical.choice,
+      --   rcases h with ⟨σ, hσ⟩,
+      --   use σ,
+      -- end,
       have hg : ∀ a, s_winning (g a) X (t.concat a) ∧ (g a).player = ¬ p := sorry,
       have hg₁ : ∀ a, (g a).player = ¬ p := λ a, (hg a).right,
       have hg₂ : ∀ a, s_quasi_strategy (g a) (t.concat a) := λ a, (hg a).left.left,

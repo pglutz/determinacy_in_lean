@@ -15,6 +15,20 @@ begin
   { rw [stream_prefix, list.length_concat, ih], },
 end
 
+lemma stream_prefix_nth (f : ℕ → α) (n : ℕ) : (stream_prefix f (n + 1)).nth n = f n :=
+begin
+  unfold stream_prefix,
+  have := stream_prefix_length f n,
+  conv
+  { to_lhs,
+    congr,
+    skip,
+    rw ← this, },
+  rw list.concat_eq_append,
+  rw list.nth_concat_length,
+  refl,
+end
+
 lemma stream_prefix_prefix (f : ℕ → α) (n m : ℕ) (h : n ≤ m) :
   stream_prefix f n <+: stream_prefix f m :=
 begin

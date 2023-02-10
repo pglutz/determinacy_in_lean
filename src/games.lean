@@ -40,7 +40,21 @@ variables (p : β) {γ : Type*}
 
 instance union_of_quasi_strategies (g : γ → quasi_strategy G)
   (hg : ∀ x, (g x).player = p) : quasi_strategy G :=
-⟨p, ⋃ (x : γ), (g x).positions, sorry⟩
+⟨ p, 
+  ⋃ (x : γ), (g x).positions,
+  begin
+    intros t ht,
+    cases set.mem_Union.mp ht with x hx,
+    have key := (g x).is_quasi_strategy t hx,
+    split,
+    { intros ht',
+      cases key.left ((rfl.congr (eq.symm (hg x))).mp ht') with a ha,
+      use a,
+      exact set.mem_Union_of_mem x ha, },
+    { intros ht' a,
+      have := key.right (ne_of_ne_of_eq ht' (eq.symm (hg x))) a,
+      exact set.mem_Union_of_mem x this, },
+  end ⟩
 
 lemma mem_union_of_mem (g : γ → quasi_strategy G) (hg : ∀ x, (g x).player = p)
   (x : γ) (hs : s ∈ (g x).positions) : s ∈ (union_of_quasi_strategies p g hg).positions :=
@@ -48,25 +62,118 @@ lemma mem_union_of_mem (g : γ → quasi_strategy G) (hg : ∀ x, (g x).player =
 
 instance extension_of_quasi_strategy (a : α) (h : G.turn(s) = σ.player) 
   (h' : s.concat a ∈ σ.positions) : quasi_strategy G :=
-⟨σ.player, {s} ∪ σ.positions, sorry⟩
+⟨ σ.player,
+  {s} ∪ σ.positions,
+  begin
+    intros t ht,
+    cases ht,
+    { change t = s at ht,
+      rw ht,
+      split,
+      { intros _,
+        exact ⟨a, set.mem_union_right _ h'⟩, },
+      { intros ht',
+        exfalso,
+        exact ht' h, },
+    },
+    { cases σ.is_quasi_strategy t ht with hσ₁ hσ₂,
+      split,
+      { intros ht',
+        cases hσ₁ ht' with b hb,
+        use b,
+        exact set.mem_union_right _ hb, },
+      { intros ht' b,
+        exact set.mem_union_right _ (hσ₂ ht' b), }, },
+  end ⟩
 
-lemma s_quasi_strategy_union (g : α → quasi_strategy G) (hg : ∀ a, (g a).player = p)
-  (hg' : ∀ a, s_quasi_strategy (g a) (s.concat a)) :
-  s_quasi_strategy (union_of_quasi_strategies p g hg) s := sorry
+instance extension_of_quasi_strategy' [hα : nonempty α] (h : ∀ a, s.concat a ∈ σ.positions) :
+  quasi_strategy G :=
+⟨ σ.player,
+  {s} ∪ σ.positions,
+  begin
+    intros t ht,
+    cases ht,
+    { change t = s at ht,
+      rw ht,
+      split,
+      { intros _,
+        use hα.some,
+        exact set.mem_union_right _ (h _), },
+      { intros _ a,
+        exact set.mem_union_right _ (h a), }, },
+    { cases σ.is_quasi_strategy t ht with hσ₁ hσ₂,
+      split,
+      { intros ht',
+        cases hσ₁ ht' with b hb,
+        use b,
+        exact set.mem_union_right _ hb, },
+      { intros ht' b,
+        exact set.mem_union_right _ (hσ₂ ht' b), }, },
+  end ⟩
+
+lemma s_quasi_strategy_extension' [hα : nonempty α] (h : ∀ a, s.concat a ∈ σ.positions)
+  (h' : ∀ t ∈ σ.positions, s <+: t) :
+  s_quasi_strategy (extension_of_quasi_strategy' σ s h) s :=
+begin
+  split,
+  { left,
+    exact set.mem_singleton s, },
+  { intros t ht,
+    cases ht,
+    { change t = s at ht,
+      rw ht, },
+    { exact h' t ht }, },
+end
+
+-- lemma s_quasi_strategy_union (g : α → quasi_strategy G) (hg : ∀ a, (g a).player = p)
+--   (hg' : ∀ a, s_quasi_strategy (g a) (s.concat a)) :
+--   s_quasi_strategy (union_of_quasi_strategies p g hg) s := sorry
 
 lemma s_quasi_strategy_extension (a : α) (h : G.turn(s) = σ.player)
   (h' : s_quasi_strategy σ (s.concat a)) :
-  s_quasi_strategy (extension_of_quasi_strategy σ s a h (s_in_s_quasi_strategy σ _ h')) s := sorry
+  s_quasi_strategy (extension_of_quasi_strategy σ s a h (s_in_s_quasi_strategy σ _ h')) s :=
+begin
+  split,
+  { exact (quasi_strategy.positions G).mem_union_left (set.mem_singleton s), },
+  { intros t ht,
+    cases ht,
+    { change t = s at ht,
+      rw ht, },
+    { calc s <+: s.concat a : list.prefix_concat a s
+      ... <+: t : h'.right t ht, }, },
+end
 
 lemma is_play_of_is_play_union (g : α → quasi_strategy G) (hg : ∀ a, (g a).player = p)
   (hg' : ∀ a, s_quasi_strategy (g a) (s.concat a)) (hf : is_play (union_of_quasi_strategies p g hg) f) :
   ∃ a, is_play (g a) f :=
 begin
+  cases hf with N' hf,
+  let N := max N' (s.length + 1),
   let a := f (s.length),
   use a,
-  use s.length,
+  use N,
   intros n hn,
-  sorry,
+  specialize hf n (le_of_max_le_left hn),
+  cases set.mem_Union.mp hf with b hb,
+  have key : a = b,
+  { have h₁ := (hg' b).right (stream_prefix f n) hb,
+    have h₂ : s.concat b = stream_prefix f (s.length + 1),
+    { apply list.eq_of_prefix_of_length_eq,
+      { apply list.prefix_of_prefix_length_le h₁ (stream_prefix_prefix f (s.length + 1) n (le_of_max_le_right hn)),
+        rw list.length_concat,
+        rw stream_prefix_length, },
+      { rw stream_prefix_length,
+        rw list.length_concat, },
+    },
+    have h₃ : (s.concat b).nth s.length = b,
+    { simp only [list.concat_eq_append, list.nth_concat_length],
+      refl, },
+    rw h₂ at h₃,
+    rw stream_prefix_nth at h₃,
+    exact with_bot.coe_inj.mp h₃,
+  },
+  rw key,
+  exact hb,
 end
 
 lemma winning_quasi_strategy_union (g : α → quasi_strategy G) (hg : ∀ a, (g a).player = p)
@@ -97,20 +204,48 @@ begin
   { exact hf₂, },
 end
 
+lemma is_play_of_is_play_extension' [hα : nonempty α] (h : ∀ a, s.concat a ∈ σ.positions)
+  (h' : ∀ t ∈ σ.positions, s <+: t) (hf : is_play (extension_of_quasi_strategy' σ s h) f) :
+  is_play σ f :=
+begin
+  cases hf with N' hf,
+  let N := max N' (s.length + 1),
+  use N,
+  intros n hn,
+  cases hf n (le_of_max_le_left hn) with hf₁ hf₂,
+  { exfalso,
+    change stream_prefix f n = s at hf₁,
+    have h₁ : n ≥ s.length + 1 := le_of_max_le_right hn,
+    have h₂ : (stream_prefix f n).length = n := stream_prefix_length f n,
+    have h₃ : (stream_prefix f n).length = s.length := by rw hf₁,
+    linarith, },
+  { exact hf₂, },
+end
+
 lemma winning_quasi_strategy_extension (a : α) (h : G.turn(s) = σ.player)
   (h' : s.concat a ∈ σ.positions) (h'' : winning σ X) :
   winning (extension_of_quasi_strategy σ s a h h') X :=
 λ f hf, h'' f (is_play_of_is_play_extension _ _ _ _ h h' hf)
 
-lemma s_winning_quasi_strategy_union (g : α → quasi_strategy G) (hg : ∀ a, (g a).player = p)
-  (hg' : ∀ a, s_quasi_strategy (g a) (s.concat a)) (hg'' : ∀ a, winning (g a) X) :
-  s_winning (union_of_quasi_strategies p g hg) X s :=
-  ⟨s_quasi_strategy_union _ _ _ _ hg', winning_quasi_strategy_union _ s _ _ _ hg' hg''⟩
+lemma winning_quasi_strategy_extension' [hα : nonempty α] (h : ∀ a, s.concat a ∈ σ.positions)
+  (h' : ∀ t ∈ σ.positions, s <+: t) (h'' : winning σ X) :
+  winning (extension_of_quasi_strategy' σ s h) X :=
+λ f hf, h'' f (is_play_of_is_play_extension' _ _ _ h h' hf)
+
+-- lemma s_winning_quasi_strategy_union (g : α → quasi_strategy G) (hg : ∀ a, (g a).player = p)
+--   (hg' : ∀ a, s_quasi_strategy (g a) (s.concat a)) (hg'' : ∀ a, winning (g a) X) :
+--   s_winning (union_of_quasi_strategies p g hg) X s :=
+--   ⟨s_quasi_strategy_union _ _ _ _ hg', winning_quasi_strategy_union _ s _ _ _ hg' hg''⟩
 
 lemma s_winning_quasi_strategy_extension (a : α) (h : G.turn(s) = σ.player)
   (h' : s_quasi_strategy σ (s.concat a)) (h'' : winning σ X) :
   s_winning (extension_of_quasi_strategy σ s a h (s_in_s_quasi_strategy σ _ h')) X s :=
   ⟨s_quasi_strategy_extension _ _ _ _ _, winning_quasi_strategy_extension _ _ _ _ _ _ h''⟩
+
+lemma s_winning_quasi_strategy_extension' [hα : nonempty α] (h : ∀ a, s.concat a ∈ σ.positions)
+  (h' : ∀ t ∈ σ.positions, s <+: t) (h'' : winning σ X) :
+  s_winning (extension_of_quasi_strategy' σ s h) X s :=
+⟨s_quasi_strategy_extension' σ s h h', winning_quasi_strategy_extension' σ X s h h' h''⟩
 
 instance above_s_quasi_strategy (G : game α β) (s : list α) (p : β) [hα : nonempty α] : quasi_strategy G :=
 ⟨ p,
@@ -205,16 +340,6 @@ lemma s_winning_restriction (h : s ∈ σ.positions) (h' : winning σ X) :
   ⟨s_quasi_strategy_restriction _ _ h, winning_restriction _ _ _ h'⟩
 
 -- TODO:
--- alter definition of union of winning quasi strategies:
---   - Define a new type of structure consisting of quasi strategies for s::a and proofs of various stuff
---   - Alter lemmas in necessary way
---   - Finish proving open quasi-determinacy
--- OR: should winning be a structure/class instead of a prop?
--- union of winning quasi strategies is winning (with appropriate extra hypothesis)
--- extension of winning quasi strategy is winning
--- restriction of quasi strategy to above s
--- quasi strategy above s
--- quasi strategy above s is winning iff
 -- strategy from quasi-strategy (instance of quasi-strategy)
 -- strategy is winning if quasi-strategy is winning
 -- prove determinacy

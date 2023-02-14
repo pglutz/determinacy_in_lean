@@ -237,5 +237,3 @@ begin
     have key := prefix_winning X C s hs₁ hC,
     exact h' (false.rec (is_p1_winning list.nil X) (hf (prefix_winning X C s hs₁ hC))), },
 end
-
-

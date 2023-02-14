@@ -125,10 +125,6 @@ begin
     { exact h' t ht }, },
 end
 
--- lemma s_quasi_strategy_union (g : α → quasi_strategy G) (hg : ∀ a, (g a).player = p)
---   (hg' : ∀ a, s_quasi_strategy (g a) (s.concat a)) :
---   s_quasi_strategy (union_of_quasi_strategies p g hg) s := sorry
-
 lemma s_quasi_strategy_extension (a : α) (h : G.turn(s) = σ.player)
   (h' : s_quasi_strategy σ (s.concat a)) :
   s_quasi_strategy (extension_of_quasi_strategy σ s a h (s_in_s_quasi_strategy σ _ h')) s :=
@@ -231,11 +227,6 @@ lemma winning_quasi_strategy_extension' [hα : nonempty α] (h : ∀ a, s.concat
   (h' : ∀ t ∈ σ.positions, s <+: t) (h'' : winning σ X) :
   winning (extension_of_quasi_strategy' σ s h) X :=
 λ f hf, h'' f (is_play_of_is_play_extension' _ _ _ h h' hf)
-
--- lemma s_winning_quasi_strategy_union (g : α → quasi_strategy G) (hg : ∀ a, (g a).player = p)
---   (hg' : ∀ a, s_quasi_strategy (g a) (s.concat a)) (hg'' : ∀ a, winning (g a) X) :
---   s_winning (union_of_quasi_strategies p g hg) X s :=
---   ⟨s_quasi_strategy_union _ _ _ _ hg', winning_quasi_strategy_union _ s _ _ _ hg' hg''⟩
 
 lemma s_winning_quasi_strategy_extension (a : α) (h : G.turn(s) = σ.player)
   (h' : s_quasi_strategy σ (s.concat a)) (h'' : winning σ X) :

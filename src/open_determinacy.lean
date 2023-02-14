@@ -104,4 +104,3 @@ begin
       exact h', },
     { exact non_winning_is_winning _ _ h, }, },
 end 
-

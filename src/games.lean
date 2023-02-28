@@ -329,9 +329,3 @@ end
 lemma s_winning_restriction (h : s ∈ σ.positions) (h' : winning σ X) : 
   s_winning (quasi_strategy_restriction σ s) X s :=
   ⟨s_quasi_strategy_restriction _ _ h, winning_restriction _ _ _ h'⟩
-
--- TODO:
--- strategy from quasi-strategy (instance of quasi-strategy)
--- strategy is winning if quasi-strategy is winning
--- prove determinacy
--- prove open → is_prefix_open

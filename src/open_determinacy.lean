@@ -130,4 +130,4 @@ theorem open_quasi_determinacy (h : is_open X) : @quasi_determined _ _ G X s :=
 prefix_open_quasi_determinacy G X s (prefix_open_of_open X h)
 
 theorem open_determinacy (h : is_open X) : @determined _ _ G X s :=
-  determined_of_quasi_determined _ _ _ (open_quasi_determinacy _ _ _ h)
+determined_of_quasi_determined _ _ _ (open_quasi_determinacy _ _ _ h)

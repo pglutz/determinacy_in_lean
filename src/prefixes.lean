@@ -96,6 +96,33 @@ begin
   { exact hf, },
 end
 
+lemma concat_prefix_of_length_lt_of_prefix {q p : list α} (h : q.length < p.length) :
+  q <+: p → q.concat (list.nth_le p q.length h) <+: p :=
+begin
+  intros hqp,
+  generalize hu : list.drop q.length p = u,
+  have hqup : q ++ u = p,
+  { rw [← hu, list.prefix_iff_eq_append.mp hqp], },
+  cases u with hd tl,
+  { have : q = p,
+    { rwa [← q.append_nil] },
+    have : q.length = p.length := by { rw this },
+    exfalso,
+    apply (ne_of_lt h) this, },
+  have : (list.nth_le p q.length h) = hd,
+  { conv in p { rw ← hqup,},
+    rw (list.nth_le_append_right le_rfl _),
+    simp, },
+  rw [this, ← hqup],
+  simp,
+  apply list.prefix_iff_eq_append.mpr,
+  simp,
+  suffices : list.drop (q.length + 1) (q ++ hd :: tl) = tl,
+  { rwa this, },
+  rw [add_comm, list.drop_add, list.drop_left],
+  simp,
+end
+
 def prefix_open (X : set (ℕ → α)) (C : set (list α)):= ∀ f : ℕ → α,
   f ∈ X ↔ ∃ s ∈ C, is_prefix s f 
 

@@ -1,5 +1,6 @@
 import data.seq.seq
 import data.list.infix
+import tactic
 
 variable {α : Type*}
 
@@ -42,7 +43,36 @@ begin
        ... <+: stream_prefix f m.succ : list.prefix_concat (f m) (stream_prefix f m), }, },
 end
 
+lemma stream_prefix_nth' (f : ℕ → α) (n i : ℕ) (hi : i < n) : (stream_prefix f n ).nth i = f i :=
+begin
+  rw ← stream_prefix_nth,
+  have hf : stream_prefix f (i + 1) <+: stream_prefix f n := stream_prefix_prefix f (i + 1) n (nat.succ_le_iff.mpr hi),
+  have : i < (stream_prefix f (i + 1)).length,
+  { rw stream_prefix_length,
+    exact lt_add_one i, },
+  cases hf with s hs,
+  rw ← hs, 
+  exact (list.nth_append this),
+end
+
 def is_prefix (s : list α) (f : ℕ → α) := stream_prefix f (s.length) = s
+
+def is_prefix_def (s : list α) (f : ℕ → α) :
+  is_prefix s f ↔ ∀ i < s.length, s.nth i = f i :=
+begin
+  split,
+  { intros h i hi,
+    unfold is_prefix at h,
+    calc s.nth i = (stream_prefix f s.length).nth i : by rw h 
+    ... = f i : stream_prefix_nth' f s.length i hi, },
+  { intros h,
+    ext1 i,
+    by_cases hi : i < s.length,
+    { calc (stream_prefix f s.length).nth i = f i : stream_prefix_nth' f s.length i hi
+      ... = s.nth i : (h i hi).symm, },
+    { calc (stream_prefix f s.length).nth i = none : list.nth_len_le (by linarith [stream_prefix_length f s.length])
+      ... = s.nth i : (list.nth_len_le (by linarith)).symm, }, },
+end
 
 lemma prefix_of_is_prefix (s : list α) (f : ℕ → α) (n : ℕ) (h : is_prefix s f)
   (h' : n ≥ s.length) : s <+: stream_prefix f n :=

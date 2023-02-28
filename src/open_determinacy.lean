@@ -1,4 +1,5 @@
 import games
+import prefix_open
 
 noncomputable theory
 open_locale classical
@@ -92,7 +93,7 @@ begin
   exact h key,
 end
 
-theorem open_quasi_determinacy (h : is_prefix_open X) : @quasi_determined _ _ G X s :=
+theorem prefix_open_quasi_determinacy (h : is_prefix_open X) : @quasi_determined _ _ G X s :=
 begin
   by_cases h' : winning_position G X s true,
   { cases h' with σ hσ,
@@ -104,3 +105,8 @@ begin
       exact h', },
     { exact non_winning_is_winning _ _ h, }, },
 end 
+
+variables [topological_space α] [discrete_topology α]
+
+theorem open_quasi_determinacy (h : is_open X) : @quasi_determined _ _ G X s :=
+prefix_open_quasi_determinacy G X s (prefix_open_of_open X h)

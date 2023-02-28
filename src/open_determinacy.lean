@@ -1,5 +1,6 @@
 import games
 import prefix_open
+import strategy
 
 noncomputable theory
 open_locale classical
@@ -104,9 +105,29 @@ begin
     { rw ← not_false_iff at h',
       exact h', },
     { exact non_winning_is_winning _ _ h, }, },
-end 
+end
+
+theorem determined_of_quasi_determined :
+  @quasi_determined _ _ G X s → @determined _ _ G X s :=
+begin
+  by_cases nonempty α,
+  { have := classical.inhabited_of_nonempty h,
+    rintros ⟨σ, ⟨σsstrat, σwinning⟩⟩,
+    use @strategy_of_quasi_strategy _ _ this _ σ,
+    split,
+    { use @s_strategy_of_s_quasi_strategy _ _ this _ σ s σsstrat,
+      use @winning_strategy_of_winning_quasi_strategy _ _ this _ σ X σwinning, },
+    use @is_strategy_of_quasi_strategy _ _ this _ σ,
+  },
+  simp at h,
+  rintros ⟨σ, hσ⟩,
+  use [σ, hσ],
+end
 
 variables [topological_space α] [discrete_topology α]
 
 theorem open_quasi_determinacy (h : is_open X) : @quasi_determined _ _ G X s :=
 prefix_open_quasi_determinacy G X s (prefix_open_of_open X h)
+
+theorem open_determinacy (h : is_open X) : @determined _ _ G X s :=
+  determined_of_quasi_determined _ _ _ (open_quasi_determinacy _ _ _ h)

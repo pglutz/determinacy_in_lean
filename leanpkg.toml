@@ -1,0 +1,8 @@
+[package]
+name = "determinacy_in_lean"
+version = "0.1"
+lean_version = "leanprover-community/lean:3.50.3"
+path = "src"
+
+[dependencies]
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "e97cf15cd1aec9bd5c193b2ffac5a6dc9118912b"}

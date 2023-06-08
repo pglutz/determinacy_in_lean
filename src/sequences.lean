@@ -29,12 +29,12 @@ namespace finseq
 | 0 empty h := absurd h (nat.not_lt_zero _)
 | (n + 1) (σ ⌢ x) _ := x
 
-@[simp] def nth : Π {n : ℕ} (σ : finseq E n) {k}, k < n → E k
+@[simp] def nth : Π {n : ℕ} (σ : finseq E n) (k), k < n → E k
 | 0 empty k h := absurd h k.not_lt_zero
 | (n+1) (σ ⌢ x) k h₁ :=
     if h₂ : k = n
       then by rw h₂; exact x
-      else nth σ (nat.lt_of_le_and_ne (nat.le_of_lt_succ h₁) h₂)
+      else nth σ k (nat.lt_of_le_and_ne (nat.le_of_lt_succ h₁) h₂)
 
 @[simp] def restrict : Π {n : ℕ} (σ : finseq E n) (k : ℕ), k ≤ n → finseq E k
 | 0 empty k h := by rw (nat.eq_zero_of_le_zero h); exact empty
@@ -142,7 +142,7 @@ lemma empty_prefix (α : seq E) : finseq.empty <<< α := by simp
 lemma restrict_prefix (α : seq E) (k) : α.restrict k <<< α := by simp
 
 lemma is_prefix_iff_nth_equal {n} (σ : finseq E n) (α : seq E) :
-  σ <<< α ↔ ∀ k (h : k < n), α k = σ.nth h :=
+  σ <<< α ↔ ∀ k (h : k < n), α k = σ.nth k h :=
 begin
   split,
   { intros h,

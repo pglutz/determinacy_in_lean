@@ -46,7 +46,7 @@ def is_quasi_strategy (P : β) (T : game_tree E) :=
 -- sense to say that it loses for P
 -- TODO: maybe we should rename taboo to something else because of this?
 def is_winning_position (P : β) {n} (σ : finseq E n) := ∀ α, G.is_play α → σ <<< α → G.payoff α = P
-  ∧ ∀ {k} (τ : finseq E k), G.is_finite_play τ → G.is_leaf τ → σ <<< τ → G.taboo τ = P
+  ∧ ∀ {k} (τ : finseq E k), G.is_finite_play τ → G.is_leaf τ → σ << τ → G.taboo τ = P
 
 def is_winnable_position (P : β) {n} (σ : finseq E n) :=
   ∃ (T : game_tree E), G.is_quasi_strategy P T ∧ T.is_finite_play σ

@@ -41,6 +41,12 @@ end
 -- Reachable positions in the game tree T
 def positions (n : ℕ) := { σ : finseq E n | T.is_position σ }
 
+@[simp] def position.is_prefix {T : game_tree E} {n k : ℕ}
+  (σ : T.positions n) (τ : T.positions k) :=
+(σ : finseq E n) << (τ : finseq E k)
+
+infix (name := game_tree.position.prefix) ` << `:50 := position.is_prefix
+
 lemma move_of_position_cat {n} {σ : finseq E n} {x : E n} :
   σ ⌢ x ∈ T.positions (n+1) → x ∈ T.moves σ :=
 begin

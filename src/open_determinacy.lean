@@ -98,8 +98,7 @@ begin
       rw ← (cat_restrict (τ.restrict (n+1) this)),
       simp,
       split,
-      { rw restrict_restrict,
-        exact h },
+      { exact h },
       have h₁ : τ.nth n this ∈ S.moves σ := by {
         rw ← h,
         apply τplay.1
@@ -170,7 +169,7 @@ begin
     },
     have h₁ : (σ ⌢ x) ∈ (T x).positions (n+1) := ((hT x).snd h₀).2.1,
     have h₂ : σ ⌢ x = τ.restrict (n+1) hk := by {
-      have h' : τ.nth n hk = (τ.restrict (n+1) hk).nth n (le_refl (n+1)) := by simp,
+      have h' : τ.nth n hk = (τ.restrict (n+1) hk).nth n (lt_succ_self _) := by simp,
       have h'' : τ.restrict n (le_of_lt hk) =
                   (τ.restrict (n+1) hk).restrict n (le_succ _) := by {
         symmetry,
@@ -209,7 +208,7 @@ begin
     have h₄ : (α.restrict m).nth k h₁ = α k := seq.nth_restrict _ _,
     have h₅ : (α.restrict m).nth n h₀ = α n := seq.nth_restrict _ _,
     have h₆ : (α.restrict m).restrict k (le_of_lt h₁) = α.restrict k :=
-      seq.restrict_restrict _ _,
+      seq.restrict_restrict _,
     have h₇ := (SsubT₀ h₂ h₃) h₁,
     rw [h₄, h₅, h₆] at h₇,
     exact h₇
@@ -270,7 +269,6 @@ begin
       use h₁,
       rw ← (cat_restrict (τ.restrict (n+1) h₁)),
       simp,
-      rw restrict_restrict,
       exact h
     },
     have h₄ : τ ∈ (T x).finite_plays k := by {
@@ -351,7 +349,7 @@ begin
     have h₁ : σ ∈ S.positions n := position_of_position_cat _ h₀,
     have h₂ : σ ∉ G.winnable_positions P n := ih h₁,
     have h₃ : x ∈ S.moves σ := by {
-      have := h₀ (le_refl (n+1)),
+      have := h₀ (lt_succ_self _),
       simp at this,
       exact this
     },

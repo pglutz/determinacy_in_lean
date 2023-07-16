@@ -25,11 +25,11 @@ instance game_map_to_move_fun {E₀ : ℕ → Type u₀} {E₁ : ℕ → Type u�
       G₀.moves (σ : finseq E₀ n) → G₁.moves (F σ : finseq E₁ n)) :=
 { coe := λ F n σ x, let τ : G₀.positions (n+1) := ⟨(σ : finseq E₀ n) ⌢ x,
                                         by simp [position_cat_of_position_of_move]⟩
-          in ⟨(F τ : finseq E₁ (n+1)).nth n (le_refl (n+1)),
+          in ⟨(F τ : finseq E₁ (n+1)).nth n (lt_succ_self _),
               begin
                 have h₀ : ↑(F τ) ∈ G₁.positions (n+1) := (F τ).mem,
                 apply move_of_position_cat,
-                have h₁ : ↑(F σ) ⌢ (F τ : finseq E₁ (n+1)).nth n (le_refl (n+1)) = ↑(F τ) := by {
+                have h₁ : ↑(F σ) ⌢ (F τ : finseq E₁ (n+1)).nth n (lt_succ_self _) = ↑(F τ) := by {
                   apply eq_of_prefix_of_length_eq,
                   apply prefix_cat_of_prefix_of_length_lt,
                   apply F.monotone,

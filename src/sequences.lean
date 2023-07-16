@@ -10,20 +10,11 @@ infixl (name := finseq.cat) ` ⌢ `:67 := finseq.cat
 
 def seq (E : ℕ → Type u) : Type u := Π n, E n
 
-@[simp] def shift (E : ℕ → Type u) (n : ℕ) (k : ℕ) := E (n + k)
-
 variables {E : ℕ → Type u}
 
 namespace finseq
 
 @[simp] def length {n : ℕ} (σ : finseq E n) := n
-
-@[simp] def append {n : ℕ} :
-  Π {k : ℕ}, finseq E n → finseq (shift E n) k → finseq E (n + k)
-| 0 σ null := σ
-| (k + 1) σ (τ ⌢ x) := (append σ τ) ⌢ x
-
-infixl (name := finseq.append) ` ⌢ `:67 := finseq.append
 
 @[simp] def parent : Π {n : ℕ}, finseq E n → finseq E n.pred
 | 0 null := null
@@ -40,8 +31,11 @@ infixl (name := finseq.append) ` ⌢ `:67 := finseq.append
       then cast (congr_arg E h₂.symm) x
       else nth σ k (nat.lt_of_le_and_ne (nat.le_of_lt_succ h₁) h₂)
 
-@[simp] lemma nth_cat {n : ℕ} (σ : finseq E n) (x : E n) :
-  (σ ⌢ x).nth n (le_refl (n+1)) = x := by simp
+@[simp] lemma nth_cat_of_length {n : ℕ} (σ : finseq E n) (x : E n) {h : n < n + 1} :
+  (σ ⌢ x).nth n h = x := by simp
+
+@[simp] lemma nth_cat_of_length_lt {n : ℕ} (σ : finseq E n) (x : E n) {k} {h : k < n} :
+  (σ ⌢ x).nth k (nat.lt_succ_of_lt h) = σ.nth k h := by simp [ne_of_lt h]
 
 @[simp] def restrict : Π {n : ℕ} (σ : finseq E n) (k : ℕ), k ≤ n → finseq E k
 | 0 null k h := cast (congr_arg (finseq E) (nat.eq_zero_of_le_zero h).symm) null
@@ -50,39 +44,27 @@ infixl (name := finseq.append) ` ⌢ `:67 := finseq.append
       then cast (congr_arg (finseq E) h₂.symm) (σ ⌢ x)
       else restrict σ k (nat.le_of_lt_succ (nat.lt_of_le_and_ne h₁ h₂))
 
-@[simp] lemma restrict_length {n : ℕ} (σ : finseq E n) (h : n ≤ n) :
+@[simp] lemma restrict_length {n : ℕ} (σ : finseq E n) {h : n ≤ n} :
   restrict σ n h = σ :=
 by induction σ; simp
 
-@[simp] lemma restrict_append {n k : ℕ} (σ : finseq E n) (τ : finseq (shift E n) k) (h : n ≤ n + k) :
-  restrict (σ ⌢ τ) n h  = σ :=
-begin
-  induction τ with k τ x τ_ih,
-  { simp, apply restrict_length, },
-  have : ¬ (n = n + k + 1) := by linarith,
-  simp [this],
-  apply τ_ih,
-end
+@[simp] lemma restrict_cat_of_length {n} (σ : finseq E n) (x : E n) :
+  restrict (σ ⌢ x) n (nat.le_succ n) = σ := by simp
 
-@[simp] lemma restrict_cat {n} (σ : finseq E n) (x : E n) :
-  restrict (σ ⌢ x) n (by linarith) = σ := by simp
+@[simp] lemma restrict_cat_of_length_le {n} (σ : finseq E n) (x : E n) {k} {h : k ≤ n} :
+  restrict (σ ⌢ x) k (nat.le_succ_of_le h) = restrict σ k h :=
+by simp [ne_of_lt (nat.lt_succ_of_le h)]
 
-@[simp] lemma cat_restrict {n} (σ : finseq E (n+1)) : σ.restrict n (by simp) ⌢ σ.nth n (by simp) = σ :=
-begin
-  cases σ with _ σ x,
-  simp
-end
+@[simp] lemma cat_restrict : Π {n} (σ : finseq E (n+1)),
+  σ.restrict n (by simp) ⌢ σ.nth n (by simp) = σ
+| n (σ ⌢ x) := by simp
 
-@[simp] lemma restrict_zero {n : ℕ} (σ : finseq E n) (h : 0 ≤ n) : σ.restrict 0 h = null :=
-begin
-  induction σ with n σ x σ_ih,
-  { simp, },
-  have : 0 ≠ n + 1 := by linarith,
-  simp [this],
-  apply σ_ih,
-end
+@[simp] lemma restrict_zero : Π {n : ℕ} (σ : finseq E n),
+  σ.restrict 0 (nat.zero_le _) = null
+| 0 null := rfl
+| (n+1) (σ ⌢ x) := restrict_zero σ
 
-@[simp] lemma nth_restrict {n k l : ℕ} (σ : finseq E n) (hlk : l < k) (hkn : k ≤ n) :
+@[simp] lemma nth_restrict {n k l : ℕ} (σ : finseq E n) {hlk : l < k} {hkn : k ≤ n} :
   (σ.restrict k hkn).nth l hlk = σ.nth l (lt_of_lt_of_le hlk hkn) :=
 begin
   induction hkn with n hkn,
@@ -95,11 +77,11 @@ begin
   apply hkn_ih
 end
 
-@[simp] lemma restrict_restrict {n k l : ℕ} (σ : finseq E n) (h₁ : l ≤ k) (h₂ : k ≤ n) (h₃ : l ≤ n) :
-  (σ.restrict k h₂).restrict l h₁ = σ.restrict l h₃ :=
+@[simp] lemma restrict_restrict {n k l : ℕ} (σ : finseq E n) {h₁ : l ≤ k} {h₂ : k ≤ n} :
+  (σ.restrict k h₂).restrict l h₁ = σ.restrict l (le_trans h₁ h₂) :=
 begin
   induction h₂ with n h₂,
-  { rw restrict_length, },
+  { rw restrict_length },
   change k ≤ n at h₂,
   cases σ with _ σ x,
   have hkn : k ≠ n + 1 := by linarith,
@@ -113,39 +95,36 @@ def is_prefix {k : ℕ} {n : ℕ} (σ : finseq E k) (τ : finseq E n) : Prop :=
 
 infix (name := finseq.prefix) ` << `:50 := is_prefix
 
-@[simp] lemma prefix_append {n k : ℕ} (σ : finseq E n) (τ : finseq (shift E n) k) : σ << σ ⌢ τ :=
-⟨nat.le_add_right _ _, restrict_append _ _ _⟩
-
 @[simp] lemma null_prefix {n : ℕ} (σ : finseq E n) : null << σ :=
-⟨nat.zero_le _, restrict_zero _ _⟩
+⟨nat.zero_le _, restrict_zero _⟩
 
 @[refl] lemma prefix_refl {n : ℕ} (σ : finseq E n) : σ << σ :=
-⟨le_rfl, restrict_length _ _⟩
+⟨le_rfl, restrict_length _⟩
 
 lemma prefix_rfl {n : ℕ} {σ : finseq E n} : σ << σ := prefix_refl _
 
-@[simp] lemma prefix_cat {n : ℕ} {σ : finseq E n} {x : E n} : σ << σ ⌢ x :=
+@[simp] lemma prefix_cat {n : ℕ} (σ : finseq E n) (x : E n) : σ << σ ⌢ x :=
 ⟨le_of_lt (nat.lt_succ_self _), by simp⟩
 
 @[trans] lemma is_prefix.trans {k m n} :
   ∀ {σ₁ : finseq E k} {σ₂ : finseq E m} {σ₃ : finseq E n},
     σ₁ << σ₂ → σ₂ << σ₃ → σ₁ << σ₃
-| _ _ _ ⟨h₁, rfl⟩ ⟨h₂, rfl⟩ := ⟨le_trans h₁ h₂, (restrict_restrict _ _ _ _).symm⟩
+| _ _ _ ⟨h₁, rfl⟩ ⟨h₂, rfl⟩ := ⟨le_trans h₁ h₂, (restrict_restrict _).symm⟩
 
-@[simp] lemma restrict_prefix {n} (k) (σ : finseq E n) (h : k ≤ n) : σ.restrict k h << σ := ⟨h, rfl⟩
+@[simp] lemma restrict_prefix {n k} (σ : finseq E n) (h : k ≤ n) : σ.restrict k h << σ := ⟨h, rfl⟩
 
 lemma prefix_of_prefix_length_le {k m n} :
   ∀ {σ₁ : finseq E k} {σ₂ : finseq E m} {σ₃ : finseq E n},
     σ₁ << σ₃ → σ₂ << σ₃ → k ≤ m → σ₁ << σ₂
-| _ _ _ ⟨h₁, rfl⟩ ⟨h₂, rfl⟩ h₃ := ⟨h₃, restrict_restrict _ _ _ _⟩
+| _ _ _ ⟨h₁, rfl⟩ ⟨h₂, rfl⟩ h₃ := ⟨h₃, restrict_restrict _⟩
 
 lemma prefix_cat_of_prefix_of_length_lt {m n} :
   ∀ {σ : finseq E m} {τ : finseq E n} (h : m < n),
     σ << τ → σ ⌢ (τ.nth m h) << τ
 | _ τ h ⟨h₁, rfl⟩ :=
   calc τ.restrict m h₁ ⌢ τ.nth m h
-        = τ.restrict m h₁ ⌢ (τ.restrict (m+1) h).nth m (le_refl (m+1)) : by simp
-    ... = (τ.restrict (m+1) h).restrict m (nat.le_succ m) ⌢ (τ.restrict (m+1) h).nth m (le_refl (m+1))
+        = τ.restrict m h₁ ⌢ (τ.restrict (m+1) h).nth m (nat.lt_succ_self _) : by simp
+    ... = (τ.restrict (m+1) h).restrict m (nat.le_succ m) ⌢ (τ.restrict (m+1) h).nth m (nat.lt_succ_self _)
             : by rw ← restrict_restrict
     ... = τ.restrict (m+1) h : cat_restrict _
     ... << τ.restrict (m+1) h : prefix_rfl
@@ -157,13 +136,9 @@ lemma prefix_or_prefix_of_prefix {k m n} {σ₁ : finseq E k} {σ₂ : finseq E 
   (prefix_of_prefix_length_le h₁ h₂)
   (prefix_of_prefix_length_le h₂ h₁)
 
-lemma eq_of_prefix_of_length_eq {n} {σ : finseq E n} {τ : finseq E n} (h₁ : σ << τ) :
-  σ = τ :=
-begin
-  cases h₁ with _ h₁,
-  rw ← h₁,
-  simp
-end
+lemma eq_of_prefix_of_length_eq {n} {σ : finseq E n} {τ : finseq E n} :
+  σ << τ → σ = τ
+| ⟨_, h⟩ := by { rw ← h, simp }
 
 end finseq
 
@@ -175,7 +150,7 @@ namespace seq
 | 0 := null
 | (k + 1) := (restrict k) ⌢ (α k)
 
-@[simp] lemma restrict_restrict (α : seq E) {m k : ℕ} (h : k ≤ m) :
+@[simp] lemma restrict_restrict (α : seq E) {m k : ℕ} {h : k ≤ m} :
   (α.restrict m).restrict k h = α.restrict k :=
 begin
   induction h with m h,
@@ -202,20 +177,20 @@ end
 
 infix (name := seq.prefix) ` << `:50 := is_prefix
 
-lemma null_prefix (α : seq E) : null << α := by simp
+@[simp] lemma null_prefix (α : seq E) : null << α := by simp
 
-lemma restrict_prefix (α : seq E) (k) : α.restrict k << α := by simp
+@[simp] lemma restrict_prefix (α : seq E) (k) : α.restrict k << α := by simp
 
 lemma is_prefix.trans {m n} :
   ∀ {σ : finseq E m} {τ : finseq E n} {α : seq E}, σ << τ → τ << α → σ << α
-| _ _ _ ⟨h₁, rfl⟩ rfl := (restrict_restrict _ _).symm
+| _ _ _ ⟨h₁, rfl⟩ rfl := (restrict_restrict _).symm
 
 lemma prefix_of_prefix_length_le {k n} :
   ∀ {σ : finseq E k} {τ : finseq E n} {α : seq E},
     σ << α → τ << α → k ≤ n → σ << τ
 | _ _ α rfl rfl h := by {
   rw ← (restrict_restrict α),
-  exact finseq.restrict_prefix _ _ h
+  exact finseq.restrict_prefix _ h
 }
 
 lemma is_prefix_iff_nth_equal {n} (σ : finseq E n) (α : seq E) :

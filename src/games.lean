@@ -236,7 +236,7 @@ begin
   rintros turn ⟨T, ⟨Tstrat, Twin⟩⟩ x xmove,
   use T,
   simp [winning_quasi_strategies_at_position, Tstrat],
-  apply winning_move_of_winning_prefix _ P σ _ prefix_cat _ Twin,
+  apply winning_move_of_winning_prefix _ P σ _ (prefix_cat _ _) _ Twin,
   apply position_cat_of_position_of_move,
   { change σ ∈ T.positions n,
     exact Twin.1 },
